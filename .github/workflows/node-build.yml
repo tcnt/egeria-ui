@@ -5,9 +5,8 @@ name: Egeria UI Build
 
 on:
   push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
 
@@ -47,7 +46,6 @@ jobs:
         if: ${{ steps.check.outputs.changed == 'true' }}
       - name: Login to DockerHub
         uses: docker/login-action@v1
-        if: ${{ steps.check.outputs.changed == 'true' && github.event_name == 'push' && github.repository == 'odpi/egeria-ui' }}
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
@@ -57,33 +55,18 @@ jobs:
           registry: quay.io
           username: ${{ secrets.QUAY_IO_USERNAME }}
           password: ${{ secrets.QUAY_IO_ACCESS_TOKEN }}
-        if: ${{ steps.check.outputs.changed == 'true' && github.event_name == 'push' && github.repository == 'odpi/egeria-ui' }}
-      # For releases (ie not main) we push the image - but not the latest tag
-      - name: Build and push (not master merge)
-        id: docker_build_release
-        uses: docker/build-push-action@v2
-        if: ${{ steps.check.outputs.changed == 'true' && github.ref != 'refs/heads/master' }}
-        with:
-          push:  ${{ github.event_name == 'push' && github.repository == 'odpi/egeria-ui' }}
-          tags: odpi/egeria-ui:${{ steps.package-version.outputs.current-version}}, quay.io/odpi/egeria-ui:${{ steps.package-version.outputs.current-version}}
-          context: .
-          file: ./Dockerfile
       # For main code stream we push the image and add the latest tag
       - name: Build and push (master merge)
         id: docker_build_master
         uses: docker/build-push-action@v2
-        if: ${{ steps.check.outputs.changed == 'true' && github.ref == 'refs/heads/master' }}
         with:
-          push:  ${{ github.event_name == 'push' && github.repository == 'odpi/egeria-ui' }}
-          tags: odpi/egeria-ui:${{ steps.package-version.outputs.current-version }}, odpi/egeria-ui:latest, quay.io/odpi/egeria-ui:${{ steps.package-version.outputs.current-version }}, quay.io/odpi/egeria-ui:latest
+          push:  true
+          tags: tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version }}, tcnthomas/egeria-ui:latest, quay.io/tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version }}, quay.io/tcnthomas/egeria-ui:latest
           context: .
           file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
       # Note the digest
-      - name: Image digest (release)
-        if: ${{ steps.check.outputs.changed == 'true' && github.ref != 'refs/heads/master' }}
-        run: echo ${{ steps.docker_build_release.outputs.digest }}
       - name: Image digest (master)
-        if: ${{ steps.check.outputs.changed == 'true' && github.ref == 'refs/heads/master' }}
         run: echo ${{ steps.docker_build_master.outputs.digest }}
       # Save an artifact of the build tree & upload
       - name: Create Archive
