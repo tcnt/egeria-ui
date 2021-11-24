@@ -43,10 +43,9 @@ jobs:
         uses: martinbeentjes/npm-get-version-action@master
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-        if: ${{ steps.check.outputs.changed == 'true' }}
       - name: Login to DockerHub
         uses: docker/login-action@v1
-        if: ${{ steps.check.outputs.changed == 'true' && github.event_name == 'push' && github.repository == 'tcnthomas/egeria-ui' }}
+        if: ${{ github.event_name == 'push' && github.repository == 'tcnthomas/egeria-ui' }}
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
@@ -56,12 +55,12 @@ jobs:
           registry: quay.io
           username: ${{ secrets.QUAY_IO_USERNAME }}
           password: ${{ secrets.QUAY_IO_ACCESS_TOKEN }}
-        if: ${{ steps.check.outputs.changed == 'true' && github.event_name == 'push' && github.repository == 'tcnthomas/egeria-ui' }}
+        if: ${{ github.event_name == 'push' && github.repository == 'tcnthomas/egeria-ui' }}
       # For releases (ie not main) we push the image - but not the latest tag
       - name: Build and push (not master merge)
         id: docker_build_release
         uses: docker/build-push-action@v2
-        if: ${{ steps.check.outputs.changed == 'true' && github.ref != 'refs/heads/master' }}
+        if: ${{ github.ref != 'refs/heads/master' }}
         with:
           push:  ${{ github.event_name == 'push' && github.repository == 'tcnthomas/egeria-ui' }}
           tags: tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version}}, quay.io/tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version}}
@@ -72,7 +71,7 @@ jobs:
       - name: Build and push (master merge)
         id: docker_build_master
         uses: docker/build-push-action@v2
-        if: ${{ steps.check.outputs.changed == 'true' && github.ref == 'refs/heads/master' }}
+        if: ${{  github.ref == 'refs/heads/master' }}
         with:
           push:  ${{ github.event_name == 'push' && github.repository == 'tcnthomas/egeria-ui' }}
           tags: tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version }}, tcnthomas/egeria-ui:latest, quay.io/tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version }}, quay.io/tcnthomas/egeria-ui:latest
@@ -81,18 +80,16 @@ jobs:
           platforms: linux/amd64,linux/arm64
       # Note the digest
       - name: Image digest (release)
-        if: ${{ steps.check.outputs.changed == 'true' && github.ref != 'refs/heads/master' }}
+        if: ${{ sgithub.ref != 'refs/heads/master' }}
         run: echo ${{ steps.docker_build_release.outputs.digest }}
       - name: Image digest (master)
-        if: ${{ steps.check.outputs.changed == 'true' && github.ref == 'refs/heads/master' }}
+        if: ${{  github.ref == 'refs/heads/master' }}
         run: echo ${{ steps.docker_build_master.outputs.digest }}
       # Save an artifact of the build tree & upload
       - name: Create Archive
-        if: ${{ steps.check.outputs.changed == 'true' }}
         run: tar -zcf /tmp/egeria-ui.tar.gz .
       - name: Upload
         uses: actions/upload-artifact@v2
-        if: ${{ steps.check.outputs.changed == 'true' }}
         with:
           name: Egeria UI ${{ steps.package-version.outputs.current-version }}
           path: /tmp/egeria-ui.tar.gz
