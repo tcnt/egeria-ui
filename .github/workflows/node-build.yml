@@ -63,7 +63,7 @@ jobs:
         if: ${{ github.ref != 'refs/heads/master' }}
         with:
           push:  ${{ github.event_name == 'push' && github.repository == 'tcnt/egeria-ui' }}
-          tags: tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version}}, quay.io/tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version}}
+          tags: tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version }}, tcnthomas/egeria-ui:latest, quay.io/tcnthomas/egeria-ui:${{ steps.package-version.outputs.current-version }}, quay.io/tcnthomas/egeria-ui:latest
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
